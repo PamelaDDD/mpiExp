@@ -102,7 +102,7 @@ int main(int argc,char* argv[]) {
         gatherRegSam = new float[comm_sz*comm_sz];
         printf("gatherRegSam suceess!\n");
     // sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm
-    MPI_Gather(regularSamples, comm_sz, MPI_UNSIGNED_LONG, gatherRegSam, comm_sz, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+    MPI_Gather(regularSamples, comm_sz, MPI_FLOAT, gatherRegSam, comm_sz, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     // 7. 0号进程对各进程发来的regularSamples进行归并排序，并抽出comm_sz-1个数做privot
     float *privots = new float[comm_sz];
@@ -133,7 +133,7 @@ int main(int argc,char* argv[]) {
     }
 
     // 8.广播主元
-    MPI_Bcast(privots, comm_sz-1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast(privots, comm_sz-1, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     // 9.各进程将自己的数据按照主元分段，partStartIndex保存每段开始下标
     // 一个进程同样有溢出风险
@@ -207,14 +207,14 @@ int main(int argc,char* argv[]) {
     float preMaxData;
     if(my_rank % 2 == 0) {
         if(my_rank != comm_sz-1)
-            MPI_Send(&sortedRes[rankPartLenSum-1], 1, MPI_UNSIGNED_LONG, my_rank+1, 0, MPI_COMM_WORLD);
+            MPI_Send(&sortedRes[rankPartLenSum-1], 1, MPI_FLOAT, my_rank+1, 0, MPI_COMM_WORLD);
         if(my_rank != 0)
-            MPI_Recv(&preMaxData, 1, MPI_UNSIGNED_LONG, my_rank-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&preMaxData, 1, MPI_FLOAT, my_rank-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
     else {
-        MPI_Recv(&preMaxData, 1, MPI_UNSIGNED_LONG, my_rank-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&preMaxData, 1, MPI_FLOAT, my_rank-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         if(my_rank != comm_sz-1)
-            MPI_Send(&sortedRes[rankPartLenSum-1], 1, MPI_UNSIGNED_LONG, my_rank+1, 0, MPI_COMM_WORLD);
+            MPI_Send(&sortedRes[rankPartLenSum-1], 1, MPI_FLOAT, my_rank+1, 0, MPI_COMM_WORLD);
     }
     if(my_rank > 0 && preMaxData <= sortedRes[0])
         printf("rank: %d, rank %d is small, success\n", my_rank-1, my_rank);
@@ -231,12 +231,9 @@ int main(int argc,char* argv[]) {
 
     // 最后处理
     delete []myData;
-    printf("delte myData success!\n");
     delete []regularSamples;
-    printf("delte regularSamples success!\n");
     if(my_rank==0)
         delete []gatherRegSam;
-    printf("delte gatherRegSam success!\n");
     delete []partStartIndex;
     delete []partLength;
     delete []recvRankPartLen;
@@ -244,7 +241,6 @@ int main(int argc,char* argv[]) {
     delete []recvPartData;
     delete []mulPartStart;
     delete []sortedRes;
-    printf("delete sucess!\n");
     MPI_Finalize();
     
     return 0;
